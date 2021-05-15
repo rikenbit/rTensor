@@ -35,4 +35,3 @@ T. Kolda, B. Bader, "Tensor decomposition and applications". SIAM Applied Mathem
 \seealso{
 \code{\link{unfold-methods}}, \code{\link{k_fold}}, \code{\link{unmatvec}}
 }
-

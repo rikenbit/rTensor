@@ -2,8 +2,8 @@
 % Please edit documentation in R/rTensor_Class.R
 \docType{methods}
 \name{tail-methods}
-\alias{tail,Tensor-method}
 \alias{tail-methods}
+\alias{tail,Tensor-method}
 \title{Tail for Tensor}
 \usage{
 \S4method{tail}{Tensor}(x, ...)
@@ -26,4 +26,3 @@ tail(tnsr)
 \seealso{
 \code{\link{head-methods}}
 }
-

@@ -16,4 +16,3 @@ rs_fold(mat, m = NULL, modes = NULL)
 \description{
 DEPRECATED. Please see \code{\link{k_fold}}.
 }
-

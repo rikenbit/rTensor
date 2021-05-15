@@ -2,9 +2,9 @@
 % Please edit documentation in R/rTensor_Class.R
 \docType{methods}
 \name{vec-methods}
+\alias{vec-methods}
 \alias{vec}
 \alias{vec,Tensor-method}
-\alias{vec-methods}
 \title{Tensor Vec}
 \usage{
 vec(tnsr)
@@ -30,4 +30,3 @@ vec(tnsr)
 \references{
 T. Kolda, B. Bader, "Tensor decomposition and applications". SIAM Applied Mathematics and Applications 2009.
 }
-

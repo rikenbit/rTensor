@@ -2,9 +2,9 @@
 % Please edit documentation in R/rTensor_Class.R
 \docType{methods}
 \name{innerProd-methods}
+\alias{innerProd-methods}
 \alias{innerProd}
 \alias{innerProd,Tensor,Tensor-method}
-\alias{innerProd-methods}
 \title{Tensors Inner Product}
 \usage{
 innerProd(tnsr1, tnsr2)
@@ -30,4 +30,3 @@ tnsr1 <- rand_tensor()
 tnsr2 <- rand_tensor()
 innerProd(tnsr1,tnsr2)
 }
-

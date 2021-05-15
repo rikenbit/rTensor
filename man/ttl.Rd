@@ -4,7 +4,7 @@
 \alias{ttl}
 \title{Tensor Times List}
 \usage{
-ttl(tnsr, list_mat, ms = NULL, transpose = FALSE)
+ttl(tnsr, list_mat, ms = NULL)
 }
 \arguments{
 \item{tnsr}{Tensor object with K modes}
@@ -12,8 +12,6 @@ ttl(tnsr, list_mat, ms = NULL, transpose = FALSE)
 \item{list_mat}{a list of matrices}
 
 \item{ms}{a vector of modes to contract on (order should match the order of \code{list_mat})}
-
-\item{transpose}{if matrices should be transposed before multiplication}
 }
 \value{
 Tensor object with K modes
@@ -40,4 +38,3 @@ T. Kolda, B. Bader, "Tensor decomposition and applications". SIAM Applied Mathem
 \seealso{
 \code{\link{ttm}}
 }
-

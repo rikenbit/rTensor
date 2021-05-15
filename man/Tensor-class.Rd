@@ -2,8 +2,8 @@
 % Please edit documentation in R/rTensor_Class.R
 \docType{class}
 \name{Tensor-class}
-\alias{Tensor}
 \alias{Tensor-class}
+\alias{Tensor}
 \title{S4 Class for a Tensor}
 \description{
 An S4 class for a tensor with arbitrary number of modes. The Tensor class extends the base 'array' class to include additional tensor manipulation (folding, unfolding, reshaping, subsetting) as well as a formal class definition that enables more explicit tensor algebra.
@@ -68,6 +68,7 @@ All of the decompositions and regression models in this package require a Tensor
    \item{image}{\code{signature(tnsr = "Tensor")}: ...}
  }
 }
+
 \examples{
 tnsr <- rand_tensor()
 class(tnsr)
@@ -77,13 +78,12 @@ dim(tnsr)
 tnsr@num_modes
 tnsr@data
 }
-\author{
-James Li \email{jamesyili@gmail.com}
-}
 \references{
-M. Kilmer, K. Braman, N. Hao, and R. Hoover, "Third-order tensors as operators on matrices: a theoretical and computational framework with applications in imaging". SIAM Journal on Matrix Analysis and Applications 2013.
+James Li, Jacob Bien, Martin T. Wells (2018). rTensor: An R Package for Multidimensional Array (Tensor) Unfolding, Multiplication, and Decomposition. Journal of Statistical Software, 87(10), 1-31. URL http://www.jstatsoft.org/v087/i10/.
 }
 \seealso{
 \code{\link{as.tensor}}
 }
-
+\author{
+James Li \email{jamesyili@gmail.com}
+}

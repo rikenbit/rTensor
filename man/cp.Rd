@@ -33,8 +33,12 @@ Canonical Polyadic (CP) decomposition of a tensor, aka CANDECOMP/PARAFRAC. Appro
 Uses the Alternating Least Squares (ALS) estimation procedure. A progress bar is included to help monitor operations on large tensors.
 }
 \examples{
-tnsr <- rand_tensor(c(6,7,8))
-cpD <- cp(tnsr,num_components=5)
+### How to retrieve faces_tnsr from figshare
+# faces_tnsr <- load_orl()
+# subject <- faces_tnsr[,,14,]
+dummy_faces_tnsr <- rand_tensor(c(92,112,40,10))
+subject <- dummy_faces_tnsr[,,14,]
+cpD <- cp(subject, num_components=3)
 cpD$conv
 cpD$norm_percent
 plot(cpD$all_resids)
@@ -45,4 +49,3 @@ T. Kolda, B. Bader, "Tensor decomposition and applications". SIAM Applied Mathem
 \seealso{
 \code{\link{tucker}}
 }
-

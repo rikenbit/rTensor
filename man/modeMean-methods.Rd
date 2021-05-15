@@ -2,9 +2,9 @@
 % Please edit documentation in R/rTensor_Class.R
 \docType{methods}
 \name{modeMean-methods}
+\alias{modeMean-methods}
 \alias{modeMean}
 \alias{modeMean,Tensor-method}
-\alias{modeMean-methods}
 \title{Tensor Mean Across Single Mode}
 \usage{
 modeMean(tnsr, m, drop)
@@ -34,4 +34,3 @@ modeMean(tnsr,1,drop=TRUE)
 \seealso{
 \code{\link{modeSum}}
 }
-

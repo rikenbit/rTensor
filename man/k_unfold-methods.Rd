@@ -2,9 +2,9 @@
 % Please edit documentation in R/rTensor_Class.R
 \docType{methods}
 \name{k_unfold-methods}
+\alias{k_unfold-methods}
 \alias{k_unfold}
 \alias{k_unfold,Tensor-method}
-\alias{k_unfold-methods}
 \title{Tensor k-mode Unfolding}
 \usage{
 k_unfold(tnsr, m)
@@ -35,4 +35,3 @@ T. Kolda and B. Bader, "Tensor decomposition and applications". SIAM Applied Mat
 \seealso{
 \code{\link{matvec-methods}} and \code{\link{unfold-methods}}
 }
-

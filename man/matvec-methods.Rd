@@ -2,9 +2,9 @@
 % Please edit documentation in R/rTensor_Class.R
 \docType{methods}
 \name{matvec-methods}
+\alias{matvec-methods}
 \alias{matvec}
 \alias{matvec,Tensor-method}
-\alias{matvec-methods}
 \title{Tensor Matvec Unfolding}
 \usage{
 matvec(tnsr)
@@ -33,4 +33,3 @@ M. Kilmer, K. Braman, N. Hao, and R. Hoover, "Third-order tensors as operators o
 \seealso{
 \code{\link{k_unfold-methods}} and \code{\link{unfold-methods}}
 }
-

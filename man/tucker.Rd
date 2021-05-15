@@ -36,9 +36,9 @@ Uses the Alternating Least Squares (ALS) estimation procedure also known as High
 The length of \code{ranks} must match \code{tnsr@num_modes}.
 }
 \examples{
-tnsr <- rand_tensor(c(6,7,8))
-tuckerD <- tucker(tnsr,ranks=c(3,3,4))
-tuckerD$conv
+tnsr <- rand_tensor(c(4,4,4,4))
+tuckerD <- tucker(tnsr,ranks=c(2,2,2,2))
+tuckerD$conv 
 tuckerD$norm_percent
 plot(tuckerD$all_resids)
 }
@@ -48,4 +48,3 @@ T. Kolda, B. Bader, "Tensor decomposition and applications". SIAM Applied Mathem
 \seealso{
 \code{\link{hosvd}}, \code{\link{mpca}}
 }
-

@@ -4,7 +4,7 @@
 \alias{ttm}
 \title{Tensor Times Matrix (m-Mode Product)}
 \usage{
-ttm(tnsr, mat, m = NULL, transpose = FALSE)
+ttm(tnsr, mat, m = NULL)
 }
 \arguments{
 \item{tnsr}{Tensor object with K modes}
@@ -12,8 +12,6 @@ ttm(tnsr, mat, m = NULL, transpose = FALSE)
 \item{mat}{input matrix with same number columns as the \code{m}th mode of \code{tnsr}}
 
 \item{m}{the mode to contract on}
-
-\item{transpose}{if mat should be transposed before multiplication}
 }
 \value{
 a Tensor object with K modes
@@ -38,4 +36,3 @@ T. Kolda, B. Bader, "Tensor decomposition and applications". SIAM Applied Mathem
 \seealso{
 \code{\link{ttl}}, \code{\link{rs_unfold-methods}}
 }
-

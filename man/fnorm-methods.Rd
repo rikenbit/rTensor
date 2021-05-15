@@ -2,9 +2,9 @@
 % Please edit documentation in R/rTensor_Class.R
 \docType{methods}
 \name{fnorm-methods}
+\alias{fnorm-methods}
 \alias{fnorm}
 \alias{fnorm,Tensor-method}
-\alias{fnorm-methods}
 \title{Tensor Frobenius Norm}
 \usage{
 fnorm(tnsr)
@@ -27,4 +27,3 @@ Returns the Frobenius norm of the Tensor instance.
 tnsr <- rand_tensor()
 fnorm(tnsr)
 }
-

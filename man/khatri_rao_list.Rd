@@ -29,4 +29,3 @@ dim(khatri_rao_list(smalllizt))
 \seealso{
 \code{\link{khatri_rao}}
 }
-

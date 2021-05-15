@@ -26,4 +26,3 @@ dim(khatri_rao(matrix(runif(12),ncol=4),matrix(runif(12),ncol=4)))
 \seealso{
 \code{\link{kronecker}}, \code{\link{khatri_rao_list}}
 }
-

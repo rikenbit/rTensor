@@ -1,22 +1,30 @@
 ###Functions that operate on Matrices and Arrays
 
-#'List Hamadard Product
+load_orl <- function(){
+	faces_tnsr <- NULL
+	tempfile <- tempfile()
+	download.file("https://ndownloader.figshare.com/files/28005765", tempfile)
+	load(tempfile)
+	faces_tnsr
+}
+
+#'List hadamard Product
 #'
-#'Returns the Hamadard (element-wise) product from a list of matrices or vectors. Commonly used for n-mode products and various Tensor decompositions.
-#'@name hamadard_list
-#'@rdname hamadard_list
-#'@aliases hamadard_list
+#'Returns the hadamard (element-wise) product from a list of matrices or vectors. Commonly used for n-mode products and various Tensor decompositions.
+#'@name hadamard_list
+#'@rdname hadamard_list
+#'@aliases hadamard_list
 #'@export
 #'@param L list of matrices or vectors
-#'@return matrix that is the Hamadard product
+#'@return matrix that is the hadamard product
 #'@seealso \code{\link{kronecker_list}}, \code{\link{khatri_rao_list}}
 #'@note The modes/dimensions of each element in the list must match.
 #'@examples
-#'lizt <- list('mat1' = matrix(runif(40),ncol=4), 
+#'lizt <- list('mat1' = matrix(runif(40),ncol=4),
 #' 'mat2' = matrix(runif(40),ncol=4),
 #' 'mat3' = matrix(runif(40),ncol=4))
-#'dim(hamadard_list(lizt))
-hamadard_list <- function(L){
+#'dim(hadamard_list(lizt))
+hadamard_list <- function(L){
 	isvecORmat <- function(x){is.matrix(x) || is.vector(x)}
 	stopifnot(all(unlist(lapply(L,isvecORmat))))
 	retmat <- L[[1]]
@@ -35,9 +43,9 @@ hamadard_list <- function(L){
 #'@export
 #'@param L list of matrices or vectors
 #'@return matrix that is the Kronecker product
-#'@seealso \code{\link{hamadard_list}}, \code{\link{khatri_rao_list}}, \code{\link{kronecker}}
+#'@seealso \code{\link{hadamard_list}}, \code{\link{khatri_rao_list}}, \code{\link{kronecker}}
 #'@examples
-#'smalllizt <- list('mat1' = matrix(runif(12),ncol=4), 
+#'smalllizt <- list('mat1' = matrix(runif(12),ncol=4),
 #' 'mat2' = matrix(runif(12),ncol=4),
 #' 'mat3' = matrix(runif(12),ncol=4))
 #'dim(kronecker_list(smalllizt))
@@ -86,7 +94,7 @@ khatri_rao <- function(x,y){
 #'@seealso \code{\link{khatri_rao}}
 #'@note The number of columns must match in every element of the input list.
 #'@examples
-#'smalllizt <- list('mat1' = matrix(runif(12),ncol=4), 
+#'smalllizt <- list('mat1' = matrix(runif(12),ncol=4),
 #' 'mat2' = matrix(runif(12),ncol=4),
 #' 'mat3' = matrix(runif(12),ncol=4))
 #'dim(khatri_rao_list(smalllizt))
@@ -116,7 +124,6 @@ khatri_rao_list <- function(L,reverse=FALSE){
 #'@param tnsr Tensor object with K modes
 #'@param mat input matrix with same number columns as the \code{m}th mode of \code{tnsr}
 #'@param m the mode to contract on
-#'@param transpose if mat should be transposed before multiplication
 #'@return a Tensor object with K modes
 #'@seealso \code{\link{ttl}}, \code{\link{rs_unfold-methods}}
 #'@note The \code{m}th mode of \code{tnsr} must match the number of columns in \code{mat}. By default, the returned Tensor does not drop any modes equal to 1.
@@ -125,17 +132,16 @@ khatri_rao_list <- function(L,reverse=FALSE){
 #'tnsr <- new("Tensor",3L,c(3L,4L,5L),data=runif(60))
 #'mat <- matrix(runif(50),ncol=5)
 #'ttm(tnsr,mat,m=3)
-ttm<-function(tnsr,mat,m=NULL,transpose=FALSE){
+ttm<-function(tnsr,mat,m=NULL){
 	stopifnot(is.matrix(mat))
 	if(is.null(m)) stop("m must be specified")
 	mat_dims <- dim(mat)
-	if ( transpose ) mat_dims <- rev(mat_dims)
 	modes_in <- tnsr@modes
 	stopifnot(modes_in[m]==mat_dims[2])
 	modes_out <- modes_in
 	modes_out[m] <- mat_dims[1]
 	tnsr_m <- rs_unfold(tnsr,m=m)@data
-	retarr_m <- if (transpose) crossprod(mat,tnsr_m) else mat%*%tnsr_m
+	retarr_m <- mat%*%tnsr_m
 	rs_fold(retarr_m,m=m,modes=modes_out)
 }
 
@@ -150,18 +156,17 @@ ttm<-function(tnsr,mat,m=NULL,transpose=FALSE){
 #'@param tnsr Tensor object with K modes
 #'@param list_mat a list of matrices
 #'@param ms a vector of modes to contract on (order should match the order of \code{list_mat})
-#'@param transpose if matrices should be transposed before multiplication
 #'@return Tensor object with K modes
 #'@seealso  \code{\link{ttm}}
 #'@note The returned Tensor does not drop any modes equal to 1.
 #'@references T. Kolda, B. Bader, "Tensor decomposition and applications". SIAM Applied Mathematics and Applications 2009.
 #'@examples
 #'tnsr <- new("Tensor",3L,c(3L,4L,5L),data=runif(60))
-#'lizt <- list('mat1' = matrix(runif(30),ncol=3), 
+#'lizt <- list('mat1' = matrix(runif(30),ncol=3),
 #' 'mat2' = matrix(runif(40),ncol=4),
 #' 'mat3' = matrix(runif(50),ncol=5))
 #'ttl(tnsr,lizt,ms=c(1,2,3))
-ttl<-function(tnsr,list_mat,ms=NULL,transpose=FALSE){
+ttl<-function(tnsr,list_mat,ms=NULL){
 	if(is.null(ms)||!is.vector(ms)) stop ("m modes must be specified as a vector")
 	if(length(ms)!=length(list_mat)) stop("m modes length does not match list_mat length")
 	num_mats <- length(list_mat)
@@ -169,17 +174,16 @@ ttl<-function(tnsr,list_mat,ms=NULL,transpose=FALSE){
 	mat_nrows <- vector("list", num_mats)
 	mat_ncols <- vector("list", num_mats)
 	for(i in 1:num_mats){
-	  mat <- list_mat[[i]]
-	  m <- ms[i]
-	  mat_dims <- dim(mat)
-	  if (transpose) mat_dims <- rev(mat_dims)
-	  modes_in <- tnsr@modes
-	  stopifnot(modes_in[m]==mat_dims[2])
-	  modes_out <- modes_in
-	  modes_out[m] <- mat_dims[1]
-	  tnsr_m <- rs_unfold(tnsr,m=m)@data
-	  retarr_m <- if (transpose) crossprod(mat, tnsr_m) else mat%*%tnsr_m
-	  tnsr <- rs_fold(retarr_m,m=m,modes=modes_out)
+	mat <- list_mat[[i]]
+	m <- ms[i]
+	mat_dims <- dim(mat)
+	modes_in <- tnsr@modes
+	stopifnot(modes_in[m]==mat_dims[2])
+	modes_out <- modes_in
+	modes_out[m] <- mat_dims[1]
+	tnsr_m <- rs_unfold(tnsr,m=m)@data
+	retarr_m <- mat%*%tnsr_m
+	tnsr <- rs_fold(retarr_m,m=m,modes=modes_out)
 	}
 	tnsr
 }
@@ -220,8 +224,8 @@ t_mult <- function(x,y){
 		fft_ret[,,i]<-matrix(first,nrow=dim(first)[1])%*%matrix(second,,nrow=dim(second)[1])
 	}
 	#ifft and return as Tensor
-	ifft <- function(x){suppressWarnings(as.numeric(fft(x,inverse=TRUE))/length(x))}
-	as.tensor(aperm(apply(fft_ret,MARGIN=1:2,ifft),c(2,3,1)),drop=FALSE)
+	#.ifft <- function(x){suppressWarnings(as.numeric(fft(x,inverse=TRUE))/length(x))}
+	as.tensor(aperm(apply(fft_ret,MARGIN=1:2, .ifft),c(2,3,1)),drop=FALSE)
 }
 
 #####Special Tensors
@@ -276,7 +280,7 @@ fold <- function(mat, row_idx = NULL, col_idx = NULL, modes=NULL){
 		if(!is.matrix(mat))  stop("mat must be of class 'matrix'")
 		}else{
 			stopifnot(mat@num_modes==2)
-			mat <- mat@data			
+			mat <- mat@data
 			}
 	num_modes <- length(modes)
 	stopifnot(num_modes==length(rs)+length(cs))
@@ -335,7 +339,7 @@ unmatvec <- function(mat,modes=NULL){
 	num_modes <- length(modes)
 	cs <- 2
 	rs <- (1:num_modes)[-2]
-	fold(mat,row_idx=rs,col_idx=cs,modes=modes)	
+	fold(mat,row_idx=rs,col_idx=cs,modes=modes)
 }
 
 #'Row Space Folding of Matrix
@@ -374,10 +378,44 @@ cs_fold <- function(mat,m=NULL,modes=NULL){
 	num_modes <- length(modes)
 	cs <- m
 	rs <- (1:num_modes)[-m]
-	fold(mat,row_idx=rs,col_idx=cs,modes=modes)	
+	fold(mat,row_idx=rs,col_idx=cs,modes=modes)
 }
 
+#'ORL Database of Faces
+#'
+#'A dataset containing pictures of 40 individuals under 10 different lightings. Each image has 92 x 112 pixels. Structured as a 4-tensor with modes 92 x 112 x 40 x 10.
+#'@format A Tensor object with modes 92 x 112 x 40 x 10. The first two modes correspond to the image pixels, the third mode corresponds to the individual, and the last mode correpsonds to the lighting.
+#'@source \url{http://www.cl.cam.ac.uk/research/dtg/attarchive/facedatabase.html}
+#'@seealso \code{\link{plot_orl}}
+"faces_tnsr"
+
+#'Function to plot the ORL Database of Faces
+#'
+#'A wrapper function to image() to allow easy visualization of faces_tnsr, the ORL Face Dataset.
+#'@export
+#'@name plot_orl
+#'@rdname plot_orl
+#'@aliases plot_orl
+#'@param subject which subject to plot (1-40)
+#'@param condition which lighting condition (1-10)
+#'@references AT&T Laboratories Cambridge. \url{http://www.cl.cam.ac.uk/research/dtg/attarchive/facedatabase.html}
+#'@references F. Samaria, A. Harter, "Parameterisation of a Stochastic Model for Human Face Identification". IEEE Workshop on Applications of Computer Vision 1994.
+#'@seealso \code{\link{faces_tnsr}}
+#'@examples
+#'plot_orl(subject=5,condition=4)
+#'plot_orl(subject=2,condition=7)
+plot_orl <- function(subject=1, condition=1){
+	if (subject%in%seq(1,40)==FALSE) stop("subject must be between 1 and 40")
+	if (condition%in%seq(1,10)==FALSE) stop("condition must be between 1 and 10")
+	greyscale = grey(seq(0,1,length=256))
+	faces_tnsr <- load_orl()
+	image(faces_tnsr[,,subject,condition]@data,col=greyscale)
+}
+
+
 ###Invisible Functions (undocumented)
+#Wrapper to Inverse FFT
+.ifft <- function(x){suppressWarnings(as.numeric(fft(x,inverse=TRUE))/length(x))}
 #Creates a superdiagonal tensor
 .superdiagonal_tensor <- function(num_modes,len,elements=1L){
 	modes <- rep(len,num_modes)
@@ -417,3 +455,59 @@ cs_fold <- function(mat,m=NULL,modes=NULL){
    if(pr) print(toc - tic)
    invisible(toc - tic)
 }
+# #'MNIST Handwritten Digits Dataset in Tensor Format
+# #'
+# #'A dataset containing the MNIST training set, which contains 60,000 images (28 x 28 pixels) of handwritten digits (0-9).
+# #'@format Organized into a List, with each element of the list being a 3-Tensor corresponding to a single digit. Each 3-Tensor is (N x 28 x 28), where N is the number of samples that correspond to this digit in the original training dataset.
+# #'@source \url{http://yann.lecun.com/exdb/mnist/}
+# #'@seealso \code{\link{MNIST_test}}, \code{\link{plot_MNIST}}
+# "MNIST_train"
+
+# #'MNIST Handwritten Digits Databse in Tensor Format
+# #'
+# #'A dataset containing the MNIST test set, which contains 10,000 images (28 x 28 pixels) of handwritten digits (0-9).
+# #'@format Organized into a List, with each element of the list being a 3-Tensor corresponding to a single digit. Each 3-Tensor is (N x 28 x 28), where N is the number of samples that correspond to this digit in the original test dataset.
+# #'@source \url{http://yann.lecun.com/exdb/mnist/}
+# #'@seealso \code{\link{MNIST_train}}, \code{\link{plot_MNIST}}
+# "MNIST_test"
+
+# #'Function to plot the MNIST Dataset
+# #'
+# #'A wrapper function to image() to allow easy visualization of MNIST_train and MNIST_test, the training and testing datasets from MNIST.
+# #'@export
+# #'@name plot_MNIST
+# #'@rdname plot_MNIST
+# #'@aliases plot_MNIST
+# #'@param train_or_test 'train' or 'test' dataset
+# #'@param digit which digit (0-9)
+# #'@param index which index for this digit (if NULL then a random index will be chosen)
+# #'@references \url{http://yann.lecun.com/exdb/mnist/}
+# #'@references Y. LeCun, L. Bottou, Y. Bengio, and P. Haffner, "Gradient-based Learning Applied to Document Recognition". Proceedings of the IEEE, 86, 2278-2324.
+# #'@seealso \code{\link{MNIST_train}}, \code{\link{MNIST_test}}
+# #'@examples
+# #'plot_MNIST('train',digit=5,index=14)
+# #'plot_MNIST('train',digit=9,index=14)
+# #'plot_MNIST('test',digit=3)
+# plot_MNIST <- function(train_or_test='train',digit=9,index=NULL){
+	# if ((digit%in%seq(0,9))==FALSE) stop("digit must be an integer between 0 and 9")
+	# greyscale = grey(seq(0,1,length=256))
+	# MNIST_train <- NULL; MNIST_test <- NULL
+	# rm(MNIST_train); rm(MNIST_test)
+	# if (train_or_test=='train'){
+		# data(MNIST_train, package='rTensor', envir=environment())
+		# tmp_tnsr <- MNIST_train[[digit+1]]
+		# num_length <- tmp_tnsr@modes[1]
+		# if (is.null(index)) index <- sample(seq(1,num_length),1)
+		# if ((index%in%seq(1,num_length))==FALSE) stop(paste("index must not exceed ",num_length," for this digit",sep=""))
+		# image(tmp_tnsr[index,,]@data, col=greyscale)
+	# }else if(train_or_test=='test'){
+		# data(MNIST_test, package='rTensor', envir=environment())
+		# tmp_tnsr <- MNIST_test[[digit+1]]
+		# num_length <- tmp_tnsr@modes[1]
+		# if (is.null(index)) index <- sample(seq(1,num_length),1)
+		# if ((index%in%seq(1,num_length))==FALSE) stop(paste("index must not exceed ",num_length," for this digit",sep=""))
+		# image(tmp_tnsr[index,,]@data, col=greyscale)
+	# }else{
+		# stop("train_or_test must be 'train' or 'test'")
+	# }
+# }

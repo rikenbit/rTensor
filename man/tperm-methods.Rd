@@ -2,9 +2,9 @@
 % Please edit documentation in R/rTensor_Class.R
 \docType{methods}
 \name{tperm-methods}
+\alias{tperm-methods}
 \alias{tperm}
 \alias{tperm,Tensor-method}
-\alias{tperm-methods}
 \title{Mode Permutation for Tensor}
 \usage{
 tperm(tnsr, perm, ...)
@@ -29,7 +29,3 @@ tnsr <- rand_tensor(c(3,4,5))
 dim(tperm(tnsr,perm=c(2,1,3)))
 dim(tperm(tnsr,perm=c(1,3,2)))
 }
-\seealso{
-\code{\link{aperm}}
-}
-

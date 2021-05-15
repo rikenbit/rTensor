@@ -8,7 +8,7 @@ This package is centered around the \code{\link{Tensor-class}}, which defines a 
 }
 \details{
 This page will summarize the full functionality of this package. Note that since all the methods associated with S4 class \code{\link{Tensor-class}} are documented there, we will not duplicate it here.
- 
+
 The remaining functions can be split into two groups: the first is a set of tensor decompositions, and the second is a set of helper functions that are useful in tensor manipulation.
 
 rTensor implements the following tensor decompositions: \describe{
@@ -27,7 +27,7 @@ rTensor also provides a set functions for tensors multiplication: \describe{
 }
 
 ...as well as for matrices: \describe{
-	\item{\code{\link{hamadard_list}}}{Computes the Hamadard (element-wise) product of a list of matrices}
+	\item{\code{\link{hadamard_list}}}{Computes the Hadamard (element-wise) product of a list of matrices}
 	\item{\code{\link{kronecker_list}}}{Computes the Kronecker product of a list of matrices}
 	\item{\code{\link{khatri_rao}}}{Computes the Khatri-Rao product of two matrices}
 	\item{\code{\link{khatri_rao_list}}}{Computes the Khatri-Rao product of a list of matrices}

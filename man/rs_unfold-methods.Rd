@@ -2,9 +2,9 @@
 % Please edit documentation in R/rTensor_Class.R
 \docType{methods}
 \name{rs_unfold-methods}
+\alias{rs_unfold-methods}
 \alias{rs_unfold}
 \alias{rs_unfold,Tensor-method}
-\alias{rs_unfold-methods}
 \title{Tensor Row Space Unfolding}
 \usage{
 rs_unfold(tnsr, m)
@@ -22,4 +22,3 @@ DEPRECATED. Please see \code{\link{k_unfold-methods}} and \code{\link{unfold-met
 \details{
 \code{rs_unfold(tnsr,m=NULL)}
 }
-

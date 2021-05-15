@@ -2,8 +2,8 @@
 % Please edit documentation in R/rTensor_Class.R
 \docType{methods}
 \name{dim-methods}
-\alias{dim,Tensor-method}
 \alias{dim-methods}
+\alias{dim,Tensor-method}
 \title{Mode Getter for Tensor}
 \usage{
 \S4method{dim}{Tensor}(x)
@@ -24,4 +24,3 @@ Return the vector of modes from a tensor
 tnsr <- rand_tensor()
 dim(tnsr)
 }
-

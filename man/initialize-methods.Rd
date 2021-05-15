@@ -2,8 +2,8 @@
 % Please edit documentation in R/rTensor_Class.R
 \docType{methods}
 \name{initialize-methods}
-\alias{initialize,Tensor-method}
 \alias{initialize-methods}
+\alias{initialize,Tensor-method}
 \title{Initializes a Tensor instance}
 \usage{
 \S4method{initialize}{Tensor}(.Object, num_modes = NULL, modes = NULL,
@@ -24,4 +24,3 @@ Not designed to be called by the user. Use \code{as.tensor} instead.
 \seealso{
 \code{as.tensor}
 }
-

@@ -23,4 +23,3 @@ tsvdD <- t_svd(tnsr)
 \seealso{
 \code{\link{t_svd}}
 }
-

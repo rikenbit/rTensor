@@ -2,9 +2,9 @@
 % Please edit documentation in R/rTensor_Class.R
 \docType{methods}
 \name{cs_unfold-methods}
+\alias{cs_unfold-methods}
 \alias{cs_unfold}
 \alias{cs_unfold,Tensor-method}
-\alias{cs_unfold-methods}
 \title{Tensor Column Space Unfolding}
 \usage{
 cs_unfold(tnsr, m)
@@ -22,4 +22,3 @@ DEPRECATED. Please see \code{\link{matvec-methods}} and \code{\link{unfold-metho
 \details{
 \code{cs_unfold(tnsr,m=NULL)}
 }
-

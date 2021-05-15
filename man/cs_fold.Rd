@@ -16,4 +16,3 @@ cs_fold(mat, m = NULL, modes = NULL)
 \description{
 DEPRECATED. Please see \code{\link{unmatvec}}
 }
-

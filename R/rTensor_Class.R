@@ -12,7 +12,7 @@
 #' }
 #'@name Tensor-class
 #'@rdname Tensor-class
-#'@aliases Tensor Tensor-class 
+#'@aliases Tensor Tensor-class
 #'@docType class
 #'@exportClass Tensor
 #'@section Methods:
@@ -43,7 +43,7 @@
 #'	 }
 #'@author James Li \email{jamesyili@@gmail.com}
 #'@details {This can be seen as a wrapper class to the base \code{array} class. While it is possible to create an instance using \code{new}, it is also possible to do so by passing the data into \code{\link{as.tensor}}.
-#'	
+#'
 #'Each slot of a Tensor instance can be obtained using \code{@@}.
 #'
 #'The following methods are overloaded for the Tensor class: \code{\link{dim-methods}}, \code{\link{head-methods}}, \code{\link{tail-methods}}, \code{\link{print-methods}}, \code{\link{show-methods}},  element-wise array operations, array subsetting (extract via `['), array subset replacing (replace via `[<-'), and \code{\link{tperm-methods}}, which is a wrapper around the base \code{aperm} method.
@@ -61,7 +61,7 @@
 #'To create a Tensor with i.i.d. random normal(0, 1) entries, see \code{\link{rand_tensor}}.
 #'}
 #'@note All of the decompositions and regression models in this package require a Tensor input.
-#'@references M. Kilmer, K. Braman, N. Hao, and R. Hoover, "Third-order tensors as operators on matrices: a theoretical and computational framework with applications in imaging". SIAM Journal on Matrix Analysis and Applications 2013.
+#'@references James Li, Jacob Bien, Martin T. Wells (2018). rTensor: An R Package for Multidimensional Array (Tensor) Unfolding, Multiplication, and Decomposition. Journal of Statistical Software, 87(10), 1-31. URL http://www.jstatsoft.org/v087/i10/.
 #'@seealso \code{\link{as.tensor}}
 #'@examples
 #'tnsr <- rand_tensor()
@@ -88,7 +88,7 @@ validity = function(object){
 
 #'Tensor Unfolding
 #'
-#'Unfolds the tensor into a matrix, with the modes in \code{rs} onto the rows and modes in \code{cs} onto the columns. Note that \code{c(rs,cs)} must have the same elements (order doesn't matter) as \code{x@@modes}. Within the rows and columns, the order of the unfolding is determined by the order of the modes. This convention is consistent with Kolda and Bader (2009). 
+#'Unfolds the tensor into a matrix, with the modes in \code{rs} onto the rows and modes in \code{cs} onto the columns. Note that \code{c(rs,cs)} must have the same elements (order doesn't matter) as \code{x@@modes}. Within the rows and columns, the order of the unfolding is determined by the order of the modes. This convention is consistent with Kolda and Bader (2009).
 #'
 #'For Row Space Unfolding or m-mode Unfolding, see \code{\link{rs_unfold-methods}}. For Column Space Unfolding or matvec, see \code{\link{cs_unfold-methods}}.
 #'
@@ -114,7 +114,7 @@ def=function(tnsr,row_idx,col_idx){standardGeneric("unfold")})
 
 #'Tensor k-mode Unfolding
 #'
-#'Unfolding of a tensor by mapping the kth mode (specified through parameter \code{m}), and all other modes onto the column space. This the most common type of unfolding operation for Tucker decompositions and its variants. Also known as k-mode matricization. 
+#'Unfolding of a tensor by mapping the kth mode (specified through parameter \code{m}), and all other modes onto the column space. This the most common type of unfolding operation for Tucker decompositions and its variants. Also known as k-mode matricization.
 #'
 #'@docType methods
 #'@name k_unfold-methods
@@ -267,7 +267,7 @@ def=function(tnsr1,tnsr2){standardGeneric("innerProd")})
 #'Initializes a Tensor instance
 #'
 #'Not designed to be called by the user. Use \code{as.tensor} instead.
-#' 
+#'
 #'@docType methods
 #'@name initialize-methods
 #'@rdname initialize-methods
@@ -290,7 +290,11 @@ definition = function(.Object, num_modes=NULL, modes=NULL, data=NULL){
 	}
 	.Object@num_modes <- num_modes
 	.Object@modes <- modes
-	.Object@data <- array(data,dim=modes)
+	if (is.vector(data)){
+		.Object@data <- array(data,dim=modes)
+	}else{
+		.Object@data <- data
+	}
 	validObject(.Object)
 	.Object
 })
@@ -445,7 +449,11 @@ definition=function(x,i,j,...,drop=TRUE){
 #'@rdname extract-methods
 setMethod("[<-", signature="Tensor",
 definition=function(x,i,j,...,value){
-	as.tensor(`[<-`(x@data,i,j,...,value=value))
+	if (is(value,"Tensor")){
+		as.tensor(`[<-`(x@data,i,j,...,value=value@data))
+	}else{
+		as.tensor(`[<-`(x@data,i,j,...,value=value))
+	}
 })
 
 #'Tensor Transpose
@@ -659,7 +667,7 @@ options(warn=1)
 #'@aliases as.tensor
 #'@param x an instance of \code{array}, \code{matrix}, or \code{vector}
 #'@param drop whether or not modes of 1 should be dropped
-#'@return a \code{\link{Tensor-class}} object 
+#'@return a \code{\link{Tensor-class}} object
 #'@examples
 #'#From vector
 #'vec <- runif(100); vecT <- as.tensor(vec); vecT
@@ -675,21 +683,44 @@ as.tensor <- function(x,drop=FALSE){
 	if (is.vector(x)){
 		modes <- c(length(x))
 		num_modes <- 1L
-	}else{
+		new("Tensor", num_modes, modes, data = x)
+	}
+	else {
 		modes <- dim(x)
 		num_modes <- length(modes)
 		dim1s <- which(modes==1)
-		if(drop && (length(dim1s)>0)){
+		if (drop && (length(dim1s)>0)){
 			modes <- modes[-dim1s]
 			num_modes <- num_modes-length(dim1s)
+			new("Tensor",num_modes,modes,data=array(x,dim=modes))
+		}
+		else{
+			new("Tensor",num_modes,modes,data=x)
 		}
 	}
-new("Tensor",num_modes,modes,data=array(x,dim=modes))
 }
+
+#as.tensor <- function(x,drop=FALSE){
+#	stopifnot(is.array(x)||is.vector(x))
+#	if (is.vector(x)){
+#		modes <- c(length(x))
+#		num_modes <- 1L
+#	}else{
+#		modes <- dim(x)
+#		num_modes <- length(modes)
+#		dim1s <- which(modes==1)
+#		if(drop && (length(dim1s)>0)){
+#			modes <- modes[-dim1s]
+#			num_modes <- num_modes-length(dim1s)
+#		}
+#	}
+#new("Tensor",num_modes,modes,data=array(x,dim=modes))
+#}
+
 
 #'Mode Permutation for Tensor
 #'
-#'Overloads \code{aperm} for Tensor class for convenience. 
+#'Overloads \code{aperm} for Tensor class for convenience.
 #'
 #'@docType methods
 #'@name tperm-methods
@@ -707,7 +738,6 @@ new("Tensor",num_modes,modes,data=array(x,dim=modes))
 setGeneric(name="tperm",
 def=function(tnsr,perm,...){standardGeneric("tperm")})
 
-#'@seealso \code{\link{aperm}}
 #'@rdname tperm-methods
 #'@aliases tperm-methods tperm,Tensor-method
 setMethod("tperm",signature="Tensor",

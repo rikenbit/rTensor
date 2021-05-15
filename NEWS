@@ -1,15 +1,25 @@
 What's New?
 
+Version 1.4.8:
+- Koki Tsuyuzaki took over the maintenance of rTensor from James Li
+
+Version 1.3:
+Major Fixes:
+- added orl face dataset as faces.tnsr
+- added plotting function for orl face dataset, plot_orl()
+- removed uncessary calls to array() in the as.tensor() function, which resulted in some speed ups
+
+Minor Fixes:
+- mispelled "Hadamard" in documentation - now changed
+- changed reference to HOSVD as ALS in documentation as that might be confusing
+
 Version 1.2:
 Major Fixes:
 - updated the svd() usage inside hosvd, hucker, mpca, etc. to give the right number of eigenvectors for modes that were unbalanaced
-- Revamp to the naming scheme of the unfolding operations (see JSS paper draft/Vignette)
+- revamp to the naming scheme of the unfolding operations (see JSS paper draft/Vignette)
 
 Minor Fixes:
-- updated the percentaage calculations that were given in the outputs (before was decimal)
-
-Additions:
-- JSS draft/Vingnette
+- updated the percentage calculations that were given in the outputs (before was decimal)
 
 
 Version 1.1:

@@ -32,4 +32,3 @@ M. Kilmer, K. Braman, N. Hao, and R. Hoover, "Third-order tensors as operators o
 \seealso{
 \code{\link{t_mult}}, \code{\link{t_svd_reconstruct}}
 }
-

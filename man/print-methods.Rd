@@ -2,8 +2,8 @@
 % Please edit documentation in R/rTensor_Class.R
 \docType{methods}
 \name{print-methods}
-\alias{print,Tensor-method}
 \alias{print-methods}
+\alias{print,Tensor-method}
 \title{Print for Tensor}
 \usage{
 \S4method{print}{Tensor}(x, ...)
@@ -26,4 +26,3 @@ print(tnsr)
 \seealso{
 \code{\link{show}}
 }
-

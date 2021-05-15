@@ -2,16 +2,14 @@
 % Please edit documentation in R/rTensor_Class.R
 \docType{methods}
 \name{show-methods}
-\alias{show,Tensor-method}
 \alias{show-methods}
+\alias{show,Tensor-method}
 \title{Show for Tensor}
 \usage{
 \S4method{show}{Tensor}(object)
 }
 \arguments{
 \item{object}{the Tensor instance}
-
-\item{...}{additional parameters to be passed into show()}
 }
 \description{
 Extend show for Tensor
@@ -26,4 +24,3 @@ tnsr
 \seealso{
 \code{\link{print}}
 }
-

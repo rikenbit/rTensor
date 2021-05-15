@@ -2,8 +2,8 @@
 % Please edit documentation in R/rTensor_Class.R
 \docType{methods}
 \name{head-methods}
-\alias{head,Tensor-method}
 \alias{head-methods}
+\alias{head,Tensor-method}
 \title{Head for Tensor}
 \usage{
 \S4method{head}{Tensor}(x, ...)
@@ -26,4 +26,3 @@ head(tnsr)
 \seealso{
 \code{\link{tail-methods}}
 }
-

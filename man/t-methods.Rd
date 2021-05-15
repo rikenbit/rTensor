@@ -2,8 +2,8 @@
 % Please edit documentation in R/rTensor_Class.R
 \docType{methods}
 \name{t-methods}
-\alias{t,Tensor-method}
 \alias{t-methods}
+\alias{t,Tensor-method}
 \title{Tensor Transpose}
 \usage{
 \S4method{t}{Tensor}(x)
@@ -29,4 +29,3 @@ identical(t(t(tnsr)),tnsr)
 \references{
 M. Kilmer, K. Braman, N. Hao, and R. Hoover, "Third-order tensors as operators on matrices: a theoretical and computational framework with applications in imaging". SIAM Journal on Matrix Analysis and Applications 2013.
 }
-

@@ -1,0 +1,19 @@
+bibentry(bibtype = "Article",
+  title        = "{rTensor}: An {R} Package for Multidimensional Array (Tensor) Unfolding, Multiplication, and Decomposition",
+  author       = c(person(given = "James",
+                          family = "Li",
+                          email = "jamesyili@gmail.com"),
+                   person(given = "Jacob",
+                          family = "Bien"),
+                   person(given = c("Martin", "T."),
+                          family = "Wells")),
+  journal      = "Journal of Statistical Software",
+  year         = "2018",
+  volume       = "87",
+  number       = "10",
+  pages        = "1--31",
+  doi          = "10.18637/jss.v087.i10",
+
+  header       = "To cite rTensor in publications use:"
+)
+

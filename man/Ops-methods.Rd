@@ -2,12 +2,12 @@
 % Please edit documentation in R/rTensor_Class.R
 \docType{methods}
 \name{Ops-methods}
+\alias{Ops-methods}
 \alias{Ops,Tensor,Tensor-method}
 \alias{Ops,Tensor,array-method}
 \alias{Ops,Tensor,numeric-method}
 \alias{Ops,array,Tensor-method}
 \alias{Ops,numeric,Tensor-method}
-\alias{Ops-methods}
 \title{Conformable elementwise operators for Tensor}
 \usage{
 \S4method{Ops}{Tensor,Tensor}(e1, e2)
@@ -38,4 +38,3 @@ for (j in 1:4L){
 }
 }
 }
-

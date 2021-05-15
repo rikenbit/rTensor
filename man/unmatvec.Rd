@@ -28,4 +28,3 @@ T. Kolda, B. Bader, "Tensor decomposition and applications". SIAM Applied Mathem
 \seealso{
 \code{\link{matvec-methods}}, \code{\link{fold}}, \code{\link{k_fold}}
 }
-

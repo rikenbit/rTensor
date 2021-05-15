@@ -31,4 +31,3 @@ t_mult(tnsr, tnsr2)
 \references{
 M. Kilmer, K. Braman, N. Hao, and R. Hoover, "Third-order tensors as operators on matrices: a theoretical and computational framework with applications in imaging". SIAM Journal on Matrix Analysis and Applications 2013.
 }
-
