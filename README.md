@@ -7,6 +7,7 @@ https://cran.r-project.org/package=rTensor)
 [![:registry status badge](https://rikenbit.r-universe.dev/badges/:registry)](https://rikenbit.r-universe.dev)
 [![:total status badge](https://rikenbit.r-universe.dev/badges/:total)](https://rikenbit.r-universe.dev)
 [![rTensor status badge](https://rikenbit.r-universe.dev/badges/rTensor)](https://rikenbit.r-universe.dev)
+![GitHub Actions](https://github.com/rikenbit/rTensor/actions/workflows/build_test_push.yml/badge.svg)
 
 
 # rTensor
