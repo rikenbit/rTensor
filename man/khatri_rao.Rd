@@ -24,5 +24,5 @@ The number of columns must match in the two inputs.
 dim(khatri_rao(matrix(runif(12),ncol=4),matrix(runif(12),ncol=4)))
 }
 \seealso{
-\code{\link{kronecker}}, \code{\link{khatri_rao_list}}
+\code{\link[base]{kronecker}}, \code{\link{khatri_rao_list}}
 }

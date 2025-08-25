@@ -8,3 +8,4 @@
 ^CRAN-SUBMISSION$
 ^.*\.Rhistory$
 ^Dockerfile$
+^\.travis\.yml$

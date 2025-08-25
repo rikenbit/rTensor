@@ -22,5 +22,5 @@ smalllizt <- list('mat1' = matrix(runif(12),ncol=4),
 dim(kronecker_list(smalllizt))
 }
 \seealso{
-\code{\link{hadamard_list}}, \code{\link{khatri_rao_list}}, \code{\link{kronecker}}
+\code{\link{hadamard_list}}, \code{\link{khatri_rao_list}}, \code{\link[base]{kronecker}}
 }
