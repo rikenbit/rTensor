@@ -40,25 +40,26 @@ test_that("indscal requires square frontal slices", {
 test_that("indscal returns correct structure", {
   dat <- make_indscal_tensor()
   res <- indscal(dat$tnsr, num_components = dat$R, max_iter = 50)
-  expect_true(is.list(res))
-  expect_true(all(c("A", "D", "conv", "est", "norm_percent",
-                     "fnorm_resid", "all_resids") %in% names(res)))
+  expect(is.list(res), "result should be a list")
+  expect(all(c("A", "D", "conv", "est", "norm_percent",
+               "fnorm_resid", "all_resids") %in% names(res)),
+         "result missing expected names")
   # A is I x R matrix
-  expect_true(is.matrix(res$A))
+  expect(is.matrix(res$A), "A should be a matrix")
   expect_equal(nrow(res$A), dat$I)
   expect_equal(ncol(res$A), dat$R)
   # D is list of K diagonal matrices
-  expect_true(is.list(res$D))
+  expect(is.list(res$D), "D should be a list")
   expect_equal(length(res$D), dat$K)
   expect_equal(dim(res$D[[1]]), c(dat$R, dat$R))
   # est is Tensor
-  expect_true(is(res$est, "Tensor"))
+  expect(is(res$est, "Tensor"), "est should be a Tensor")
   expect_equal(res$est@modes, dat$tnsr@modes)
   # scalars
-  expect_true(is.numeric(res$norm_percent))
-  expect_true(is.numeric(res$fnorm_resid))
-  expect_true(is.logical(res$conv))
-  expect_true(is.numeric(res$all_resids))
+  expect(is.numeric(res$norm_percent), "norm_percent should be numeric")
+  expect(is.numeric(res$fnorm_resid), "fnorm_resid should be numeric")
+  expect(is.logical(res$conv), "conv should be logical")
+  expect(is.numeric(res$all_resids), "all_resids should be numeric")
 })
 
 test_that("indscal recovers low-rank tensor accurately", {

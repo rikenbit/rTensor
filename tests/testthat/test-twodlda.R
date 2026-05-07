@@ -51,29 +51,30 @@ test_that("twodlda requires at least 2 classes", {
 test_that("twodlda returns correct structure", {
   dat <- make_twodlda_tensor()
   res <- twodlda(dat$tnsr, labels = dat$labels, r_ranks = 3, c_ranks = 2)
-  expect_true(is.list(res))
-  expect_true(all(c("L", "R", "Z", "conv", "est", "norm_percent",
-                     "fnorm_resid", "all_resids") %in% names(res)))
+  expect(is.list(res), "result should be a list")
+  expect(all(c("L", "R", "Z", "conv", "est", "norm_percent",
+               "fnorm_resid", "all_resids") %in% names(res)),
+         "result missing expected names")
   # L is I x r_ranks
-  expect_true(is.matrix(res$L))
+  expect(is.matrix(res$L), "L should be a matrix")
   expect_equal(nrow(res$L), dat$I)
   expect_equal(ncol(res$L), 3)
   # R is J x c_ranks
-  expect_true(is.matrix(res$R))
+  expect(is.matrix(res$R), "R should be a matrix")
   expect_equal(nrow(res$R), dat$J)
   expect_equal(ncol(res$R), 2)
   # Z is list of K matrices
-  expect_true(is.list(res$Z))
+  expect(is.list(res$Z), "Z should be a list")
   expect_equal(length(res$Z), dat$K)
   expect_equal(dim(res$Z[[1]]), c(3, 2))
   # est is Tensor
-  expect_true(is(res$est, "Tensor"))
+  expect(is(res$est, "Tensor"), "est should be a Tensor")
   expect_equal(res$est@modes, dat$tnsr@modes)
   # scalars
-  expect_true(is.numeric(res$norm_percent))
-  expect_true(is.numeric(res$fnorm_resid))
-  expect_true(is.logical(res$conv))
-  expect_true(is.numeric(res$all_resids))
+  expect(is.numeric(res$norm_percent), "norm_percent should be numeric")
+  expect(is.numeric(res$fnorm_resid), "fnorm_resid should be numeric")
+  expect(is.logical(res$conv), "conv should be logical")
+  expect(is.numeric(res$all_resids), "all_resids should be numeric")
 })
 
 test_that("twodlda projections separate classes", {

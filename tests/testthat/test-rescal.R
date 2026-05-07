@@ -40,25 +40,26 @@ test_that("rescal requires square frontal slices", {
 test_that("rescal returns correct structure", {
   dat <- make_rescal_tensor()
   res <- rescal(dat$tnsr, num_components = dat$R_comp, max_iter = 50)
-  expect_true(is.list(res))
-  expect_true(all(c("A", "R", "conv", "est", "norm_percent",
-                     "fnorm_resid", "all_resids") %in% names(res)))
+  expect(is.list(res), "result should be a list")
+  expect(all(c("A", "R", "conv", "est", "norm_percent",
+               "fnorm_resid", "all_resids") %in% names(res)),
+         "result missing expected names")
   # A is N x R matrix
-  expect_true(is.matrix(res$A))
+  expect(is.matrix(res$A), "A should be a matrix")
   expect_equal(nrow(res$A), dat$N)
   expect_equal(ncol(res$A), dat$R_comp)
   # R is list of K dense matrices (R x R)
-  expect_true(is.list(res$R))
+  expect(is.list(res$R), "R should be a list")
   expect_equal(length(res$R), dat$K)
   expect_equal(dim(res$R[[1]]), c(dat$R_comp, dat$R_comp))
   # est is Tensor
-  expect_true(is(res$est, "Tensor"))
+  expect(is(res$est, "Tensor"), "est should be a Tensor")
   expect_equal(res$est@modes, dat$tnsr@modes)
   # scalars
-  expect_true(is.numeric(res$norm_percent))
-  expect_true(is.numeric(res$fnorm_resid))
-  expect_true(is.logical(res$conv))
-  expect_true(is.numeric(res$all_resids))
+  expect(is.numeric(res$norm_percent), "norm_percent should be numeric")
+  expect(is.numeric(res$fnorm_resid), "fnorm_resid should be numeric")
+  expect(is.logical(res$conv), "conv should be logical")
+  expect(is.numeric(res$all_resids), "all_resids should be numeric")
 })
 
 test_that("rescal recovers low-rank tensor accurately", {

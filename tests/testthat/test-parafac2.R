@@ -47,33 +47,34 @@ test_that("parafac2 requires 3-mode tensor", {
 test_that("parafac2 returns correct structure", {
   dat <- make_parafac2_tensor()
   res <- parafac2(dat$tnsr, num_components = dat$R, max_iter = 50)
-  expect_true(is.list(res))
-  expect_true(all(c("H", "B", "C", "D", "conv", "est", "norm_percent",
-                     "fnorm_resid", "all_resids") %in% names(res)))
+  expect(is.list(res), "result should be a list")
+  expect(all(c("H", "B", "C", "D", "conv", "est", "norm_percent",
+               "fnorm_resid", "all_resids") %in% names(res)),
+         "result missing expected names")
   # H is list of K matrices (I x R)
-  expect_true(is.list(res$H))
+  expect(is.list(res$H), "H should be a list")
   expect_equal(length(res$H), dat$K)
   expect_equal(nrow(res$H[[1]]), dat$I)
   expect_equal(ncol(res$H[[1]]), dat$R)
   # B is R x R matrix
-  expect_true(is.matrix(res$B))
+  expect(is.matrix(res$B), "B should be a matrix")
   expect_equal(dim(res$B), c(dat$R, dat$R))
   # C is J x R matrix
-  expect_true(is.matrix(res$C))
+  expect(is.matrix(res$C), "C should be a matrix")
   expect_equal(nrow(res$C), dat$J)
   expect_equal(ncol(res$C), dat$R)
   # D is list of K diagonal matrices (R x R)
-  expect_true(is.list(res$D))
+  expect(is.list(res$D), "D should be a list")
   expect_equal(length(res$D), dat$K)
   expect_equal(dim(res$D[[1]]), c(dat$R, dat$R))
   # est is Tensor
-  expect_true(is(res$est, "Tensor"))
+  expect(is(res$est, "Tensor"), "est should be a Tensor")
   expect_equal(res$est@modes, dat$tnsr@modes)
   # scalars
-  expect_true(is.numeric(res$norm_percent))
-  expect_true(is.numeric(res$fnorm_resid))
-  expect_true(is.logical(res$conv))
-  expect_true(is.numeric(res$all_resids))
+  expect(is.numeric(res$norm_percent), "norm_percent should be numeric")
+  expect(is.numeric(res$fnorm_resid), "fnorm_resid should be numeric")
+  expect(is.logical(res$conv), "conv should be logical")
+  expect(is.numeric(res$all_resids), "all_resids should be numeric")
 })
 
 test_that("parafac2 H_k satisfy cross-product constraint", {

@@ -36,5 +36,6 @@ Imports: methods
 Suggests: testthat
 Date: 2026-04-12
 URL: https://github.com/rikenbit/rTensor
+Config/testthat/edition: 2
 RoxygenNote: 7.1.2
 NeedsCompilation: no
