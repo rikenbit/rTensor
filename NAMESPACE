@@ -34,6 +34,11 @@ export(unfold)
 export(unmatvec)
 export(vec)
 export(load_orl)
+export(indscal)
+export(rescal)
+export(dedicom)
+export(parafac2)
+export(twodlda)
 
 exportClasses(Tensor)
 

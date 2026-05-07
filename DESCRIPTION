@@ -1,7 +1,7 @@
 Package: rTensor
 Type: Package
 Title: Tools for Tensor Analysis and Decomposition
-Version: 1.4.9
+Version: 1.5.0
 Authors@R: c(person(given = "James",
                     family = "Li",
                     role = "aut"),
@@ -24,14 +24,17 @@ Description: A set of tools for creation, manipulation, and modeling
     the inner product between two tensors. Familiar array operations are
     overloaded, such as index subsetting via '[' and element-wise operations.
     rTensor also implements various tensor decomposition, including CP, GLRAM,
-    MPCA, PVD, and Tucker. For tensors with 3 modes, rTensor also implements
+    MPCA, PVD, Tucker, INDSCAL, RESCAL, DEDICOM, PARAFAC2, and 2DLDA. For
+    tensors with 3 modes, rTensor also implements
     transpose, t-product, and t-SVD, as defined in Kilmer et al. (2013). Some
     auxiliary functions include the Khatri-Rao product, Kronecker product, and
     the Hadamard product for a list of matrices.
 License: MIT + file LICENSE
+Encoding: UTF-8
 Depends: R (>= 2.10.0)
 Imports: methods
-Date: 2025-08-25
+Suggests: testthat
+Date: 2026-04-12
 URL: https://github.com/rikenbit/rTensor
-RoxygenNote: 6.1.1
+RoxygenNote: 7.1.2
 NeedsCompilation: no

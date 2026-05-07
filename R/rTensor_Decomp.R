@@ -481,6 +481,680 @@ t_svd_reconstruct <- function(L){
 	return(FALSE)
 }
 
+#'INDSCAL Decomposition
+#'
+#'Individual Differences Scaling (INDSCAL) decomposition of a 3-Tensor. Decomposes a symmetric 3-Tensor into a shared factor matrix \code{A} and slice-specific diagonal weight matrices \code{D_k} such that each frontal slice \code{X_k = A \%*\% D_k \%*\% t(A)}. Uses the Alternating Least Squares (ALS) estimation procedure. For more details on INDSCAL, consult Carroll and Chang (1970).
+#'@export
+#'@details A progress bar is included to help monitor operations on large tensors. The input tensor must be 3-dimensional with square frontal slices (i.e. the first two modes must be equal).
+#'@name indscal
+#'@rdname indscal
+#'@aliases indscal
+#'@param tnsr 3-Tensor with square frontal slices
+#'@param num_components the number of components for the decomposition
+#'@param max_iter maximum number of iterations if error stays above \code{tol}
+#'@param tol relative Frobenius norm error tolerance
+#'@return a list containing the following:\describe{
+#'\item{\code{A}}{the shared factor matrix with \code{num_components} columns}
+#'\item{\code{D}}{a list of diagonal weight matrices, one for each frontal slice}
+#'\item{\code{conv}}{whether or not \code{resid} < \code{tol} by the last iteration}
+#'\item{\code{est}}{estimate of \code{tnsr} after decomposition}
+#'\item{\code{norm_percent}}{the percent of Frobenius norm explained by the approximation}
+#'\item{\code{fnorm_resid}}{the Frobenius norm of the error \code{fnorm(est-tnsr)}}
+#'\item{\code{all_resids}}{vector containing the Frobenius norm of error for all the iterations}
+#'}
+#'@seealso \code{\link{cp}}, \code{\link{rescal}}
+#'@references J. Carroll, J. Chang, "Analysis of individual differences in multidimensional scaling via an N-way generalization of Eckart-Young decomposition". Psychometrika 1970.
+#'@note The first two modes of \code{tnsr} must be equal (square frontal slices).
+#'@examples
+#'tnsr <- rand_tensor(c(4,4,3))
+#'# make symmetric frontal slices
+#'for(k in 1:3) tnsr[,,k] <- (tnsr[,,k] + t(tnsr[,,k]@data)) / 2
+#'indscalD <- indscal(tnsr, num_components=2)
+#'indscalD$conv
+#'indscalD$norm_percent
+#'plot(indscalD$all_resids)
+indscal <- function(tnsr, num_components=NULL, max_iter=25, tol=1e-5){
+	if(is.null(num_components)) stop("num_components must be specified")
+	stopifnot(is(tnsr,"Tensor"))
+	if(tnsr@num_modes!=3) stop("INDSCAL only for 3D tensors")
+	if(tnsr@modes[1]!=tnsr@modes[2]) stop("INDSCAL requires square frontal slices")
+	if (.is_zero_tensor(tnsr)) stop("Zero tensor detected")
+
+	modes <- tnsr@modes
+	I <- modes[1]
+	K <- modes[3]
+	R <- num_components
+	x <- tnsr@data
+	tnsr_norm <- fnorm(tnsr)
+
+	#initialization
+	A <- qr.Q(qr(matrix(rnorm(I * R), I, R)))
+	D_list <- vector("list", K)
+
+	curr_iter <- 1
+	converged <- FALSE
+	fnorm_resid <- rep(0, max_iter)
+
+	CHECK_CONV <- function(est_arr){
+		curr_resid <- sqrt(sum((est_arr - x)^2))
+		fnorm_resid[curr_iter] <<- curr_resid
+		if (curr_iter==1) return(FALSE)
+		if (abs(curr_resid-fnorm_resid[curr_iter-1])/tnsr_norm < tol) return(TRUE)
+		else{return(FALSE)}
+	}
+
+	#progress bar
+	pb <- txtProgressBar(min=0,max=max_iter,style=3)
+	#main loop
+	while((curr_iter < max_iter) && (!converged)){
+		setTxtProgressBar(pb,curr_iter)
+
+		#update D_k for each slice
+		AtA <- t(A) %*% A
+		for(k in 1:K){
+			d_k <- diag(t(A) %*% x[,,k] %*% A) / diag(AtA * AtA)
+			D_list[[k]] <- diag(d_k, nrow=R, ncol=R)
+		}
+
+		#update A: stack all slices into a big least-squares problem
+		# X_(1) = [X_1; X_2; ...;X_K] = [A D_1; A D_2; ...; A D_K] A^T
+		# => solve for A using stacked normal equations
+		lhs <- matrix(0, I, R)
+		rhs <- matrix(0, R, R)
+		for(k in 1:K){
+			lhs <- lhs + x[,,k] %*% A %*% D_list[[k]]
+			rhs <- rhs + D_list[[k]] %*% AtA %*% D_list[[k]]
+		}
+		A <- lhs %*% solve(rhs)
+
+		#reconstruct estimate
+		est_arr <- array(0, dim=modes)
+		for(k in 1:K){
+			est_arr[,,k] <- A %*% D_list[[k]] %*% t(A)
+		}
+
+		if(CHECK_CONV(est_arr)){
+			converged <- TRUE
+			setTxtProgressBar(pb,max_iter)
+		}else{
+			curr_iter <- curr_iter + 1
+		}
+	}
+	if(!converged){setTxtProgressBar(pb,max_iter)}
+	close(pb)
+
+	#put together return list
+	est <- as.tensor(est_arr)
+	fnorm_resid <- fnorm_resid[fnorm_resid!=0]
+	norm_percent <- (1-(tail(fnorm_resid,1)/tnsr_norm))*100
+	invisible(list(A=A, D=D_list, conv=converged, est=est,
+		norm_percent=norm_percent, fnorm_resid=tail(fnorm_resid,1),
+		all_resids=fnorm_resid))
+}
+
+#'RESCAL Decomposition
+#'
+#'RESCAL decomposition of a 3-Tensor for relational data. Decomposes a 3-Tensor into a shared entity factor matrix \code{A} and slice-specific core matrices \code{R_k} such that each frontal slice \code{X_k = A \%*\% R_k \%*\% t(A)}. Uses the Alternating Least Squares (ALS) estimation procedure. For more details on RESCAL, consult Nickel et al. (2011).
+#'@export
+#'@details A progress bar is included to help monitor operations on large tensors. The input tensor must be 3-dimensional with square frontal slices (i.e. the first two modes must be equal). Unlike \code{\link{indscal}}, the core matrices \code{R_k} are dense (not restricted to be diagonal), which allows modeling of asymmetric relations.
+#'@name rescal
+#'@rdname rescal
+#'@aliases rescal
+#'@param tnsr 3-Tensor with square frontal slices
+#'@param num_components the number of components for the decomposition
+#'@param max_iter maximum number of iterations if error stays above \code{tol}
+#'@param tol relative Frobenius norm error tolerance
+#'@return a list containing the following:\describe{
+#'\item{\code{A}}{the shared entity factor matrix with \code{num_components} columns}
+#'\item{\code{R}}{a list of core matrices (one per frontal slice), each of size \code{num_components} by \code{num_components}}
+#'\item{\code{conv}}{whether or not \code{resid} < \code{tol} by the last iteration}
+#'\item{\code{est}}{estimate of \code{tnsr} after decomposition}
+#'\item{\code{norm_percent}}{the percent of Frobenius norm explained by the approximation}
+#'\item{\code{fnorm_resid}}{the Frobenius norm of the error \code{fnorm(est-tnsr)}}
+#'\item{\code{all_resids}}{vector containing the Frobenius norm of error for all the iterations}
+#'}
+#'@seealso \code{\link{indscal}}, \code{\link{dedicom}}
+#'@references M. Nickel, V. Tresp, H. Kriegel, "A Three-Way Model for Collective Learning on Multi-Relational Data". Proceedings of the 28th International Conference on Machine Learning 2011.
+#'@note The first two modes of \code{tnsr} must be equal (square frontal slices).
+#'@examples
+#'tnsr <- rand_tensor(c(5,5,3))
+#'rescalD <- rescal(tnsr, num_components=2)
+#'rescalD$conv
+#'rescalD$norm_percent
+#'plot(rescalD$all_resids)
+rescal <- function(tnsr, num_components=NULL, max_iter=25, tol=1e-5){
+	if(is.null(num_components)) stop("num_components must be specified")
+	stopifnot(is(tnsr,"Tensor"))
+	if(tnsr@num_modes!=3) stop("RESCAL only for 3D tensors")
+	if(tnsr@modes[1]!=tnsr@modes[2]) stop("RESCAL requires square frontal slices")
+	if (.is_zero_tensor(tnsr)) stop("Zero tensor detected")
+
+	modes <- tnsr@modes
+	N <- modes[1]
+	K <- modes[3]
+	R <- num_components
+	x <- tnsr@data
+	tnsr_norm <- fnorm(tnsr)
+
+	#initialization
+	A <- qr.Q(qr(matrix(rnorm(N * R), N, R)))
+	R_list <- vector("list", K)
+
+	curr_iter <- 1
+	converged <- FALSE
+	fnorm_resid <- rep(0, max_iter)
+
+	CHECK_CONV <- function(est_arr){
+		curr_resid <- sqrt(sum((est_arr - x)^2))
+		fnorm_resid[curr_iter] <<- curr_resid
+		if (curr_iter==1) return(FALSE)
+		if (abs(curr_resid-fnorm_resid[curr_iter-1])/tnsr_norm < tol) return(TRUE)
+		else{return(FALSE)}
+	}
+
+	#progress bar
+	pb <- txtProgressBar(min=0,max=max_iter,style=3)
+	#main loop
+	while((curr_iter < max_iter) && (!converged)){
+		setTxtProgressBar(pb,curr_iter)
+
+		#update R_k for each slice: R_k = (A^T A)^{-1} A^T X_k A (A^T A)^{-1}
+		AtA <- t(A) %*% A
+		AtA_inv <- solve(AtA)
+		for(k in 1:K){
+			R_list[[k]] <- AtA_inv %*% (t(A) %*% x[,,k] %*% A) %*% AtA_inv
+		}
+
+		#update A: solve stacked normal equations
+		# sum_k X_k A R_k^T + X_k^T A R_k = sum_k A R_k AtA R_k^T + A R_k^T AtA R_k
+		# Simplified: vec(A) via Kronecker, but easier to do direct gradient step
+		# Actually use direct least squares: stack [X_1; ...; X_K] = stack [A R_1; ...; A R_K] A^T
+		# => A = (sum_k X_k A R_k^T + X_k^T A R_k) (sum_k R_k AtA R_k^T + R_k^T AtA R_k)^{-1} / 2
+		# Simpler: solve sum_k X_k %*% A %*% R_k^T = A %*% sum_k R_k %*% AtA %*% R_k^T
+		lhs <- matrix(0, N, R)
+		rhs <- matrix(0, R, R)
+		for(k in 1:K){
+			lhs <- lhs + x[,,k] %*% A %*% t(R_list[[k]])
+			lhs <- lhs + t(x[,,k]) %*% A %*% R_list[[k]]
+			rhs <- rhs + R_list[[k]] %*% AtA %*% t(R_list[[k]])
+			rhs <- rhs + t(R_list[[k]]) %*% AtA %*% R_list[[k]]
+		}
+		A <- lhs %*% solve(rhs)
+
+		#reconstruct estimate
+		est_arr <- array(0, dim=modes)
+		for(k in 1:K){
+			est_arr[,,k] <- A %*% R_list[[k]] %*% t(A)
+		}
+
+		if(CHECK_CONV(est_arr)){
+			converged <- TRUE
+			setTxtProgressBar(pb,max_iter)
+		}else{
+			curr_iter <- curr_iter + 1
+		}
+	}
+	if(!converged){setTxtProgressBar(pb,max_iter)}
+	close(pb)
+
+	#put together return list
+	est <- as.tensor(est_arr)
+	fnorm_resid <- fnorm_resid[fnorm_resid!=0]
+	norm_percent <- (1-(tail(fnorm_resid,1)/tnsr_norm))*100
+	invisible(list(A=A, R=R_list, conv=converged, est=est,
+		norm_percent=norm_percent, fnorm_resid=tail(fnorm_resid,1),
+		all_resids=fnorm_resid))
+}
+
+#'DEDICOM Decomposition
+#'
+#'Decomposition into Directional Components (DEDICOM) of a 3-Tensor. Decomposes a 3-Tensor into a shared factor matrix \code{A}, a shared asymmetric relation matrix \code{R}, and slice-specific diagonal weight matrices \code{D_k} such that each frontal slice \code{X_k = A \%*\% D_k \%*\% R \%*\% D_k \%*\% t(A)}. Uses the Alternating Least Squares (ALS) estimation procedure. For more details on DEDICOM, consult Bader et al. (2007).
+#'@export
+#'@details A progress bar is included to help monitor operations on large tensors. The input tensor must be 3-dimensional with square frontal slices (i.e. the first two modes must be equal).
+#'@name dedicom
+#'@rdname dedicom
+#'@aliases dedicom
+#'@param tnsr 3-Tensor with square frontal slices
+#'@param num_components the number of components for the decomposition
+#'@param max_iter maximum number of iterations if error stays above \code{tol}
+#'@param tol relative Frobenius norm error tolerance
+#'@return a list containing the following:\describe{
+#'\item{\code{A}}{the shared factor matrix with \code{num_components} columns}
+#'\item{\code{R}}{the asymmetric relation matrix of size \code{num_components} by \code{num_components}}
+#'\item{\code{D}}{a list of diagonal weight matrices, one for each frontal slice}
+#'\item{\code{conv}}{whether or not \code{resid} < \code{tol} by the last iteration}
+#'\item{\code{est}}{estimate of \code{tnsr} after decomposition}
+#'\item{\code{norm_percent}}{the percent of Frobenius norm explained by the approximation}
+#'\item{\code{fnorm_resid}}{the Frobenius norm of the error \code{fnorm(est-tnsr)}}
+#'\item{\code{all_resids}}{vector containing the Frobenius norm of error for all the iterations}
+#'}
+#'@seealso \code{\link{rescal}}, \code{\link{indscal}}
+#'@references B. Bader, R. Harshman, T. Kolda, "Temporal analysis of semantic graphs using ASALSAN". Proceedings of the 7th IEEE International Conference on Data Mining 2007.
+#'@note The first two modes of \code{tnsr} must be equal (square frontal slices).
+#'@examples
+#'tnsr <- rand_tensor(c(5,5,3))
+#'dedicomD <- dedicom(tnsr, num_components=2)
+#'dedicomD$conv
+#'dedicomD$norm_percent
+#'plot(dedicomD$all_resids)
+dedicom <- function(tnsr, num_components=NULL, max_iter=25, tol=1e-5){
+	if(is.null(num_components)) stop("num_components must be specified")
+	stopifnot(is(tnsr,"Tensor"))
+	if(tnsr@num_modes!=3) stop("DEDICOM only for 3D tensors")
+	if(tnsr@modes[1]!=tnsr@modes[2]) stop("DEDICOM requires square frontal slices")
+	if (.is_zero_tensor(tnsr)) stop("Zero tensor detected")
+
+	modes <- tnsr@modes
+	N <- modes[1]
+	K <- modes[3]
+	R <- num_components
+	x <- tnsr@data
+	tnsr_norm <- fnorm(tnsr)
+
+	#initialization via reparametrization: let M_k = A D_k, so X_k ~ M_k R M_k^T
+	A <- qr.Q(qr(matrix(rnorm(N * R), N, R)))
+	R_mat <- diag(1, R)
+	D_list <- vector("list", K)
+	M_list <- vector("list", K)
+	for(k in 1:K){
+		D_list[[k]] <- diag(rep(1, R), nrow=R, ncol=R)
+		M_list[[k]] <- A
+	}
+
+	curr_iter <- 1
+	converged <- FALSE
+	fnorm_resid <- rep(0, max_iter)
+
+	CHECK_CONV <- function(est_arr){
+		curr_resid <- sqrt(sum((est_arr - x)^2))
+		fnorm_resid[curr_iter] <<- curr_resid
+		if (curr_iter==1) return(FALSE)
+		if (abs(curr_resid-fnorm_resid[curr_iter-1])/tnsr_norm < tol) return(TRUE)
+		else{return(FALSE)}
+	}
+
+	#progress bar
+	pb <- txtProgressBar(min=0,max=max_iter,style=3)
+	#main loop
+	while((curr_iter < max_iter) && (!converged)){
+		setTxtProgressBar(pb,curr_iter)
+
+		#update R: given M_k, solve for R
+		# min sum_k || X_k - M_k R M_k^T ||^2
+		# => R = (sum_k M_k^T M_k kron M_k^T M_k)^{-1} vec(sum_k M_k^T X_k M_k)
+		gram_sum <- matrix(0, R*R, R*R)
+		rhs_vec <- rep(0, R*R)
+		for(k in 1:K){
+			MtM <- t(M_list[[k]]) %*% M_list[[k]]
+			gram_sum <- gram_sum + kronecker(MtM, MtM)
+			rhs_vec <- rhs_vec + as.vector(t(M_list[[k]]) %*% x[,,k] %*% M_list[[k]])
+		}
+		gram_sum_reg <- gram_sum + diag(1e-8, R*R)
+		R_vec <- solve(gram_sum_reg, rhs_vec)
+		R_mat <- matrix(R_vec, R, R)
+
+		#update M_k: for each slice, solve M_k given R
+		# X_k ~ M_k R M_k^T => vectorize and solve via Kronecker
+		for(k in 1:K){
+			# Use gradient-based update: dL/dM_k = -2 X_k M_k R^T - 2 X_k^T M_k R + 2 M_k R M_k^T M_k R^T + 2 M_k R^T M_k^T M_k R
+			# Simplified ALS: fix M_k on RHS, solve for M_k on LHS
+			# X_k M_k R^T + X_k^T M_k R = M_k (R M_k^T M_k R^T + R^T M_k^T M_k R)
+			MtM <- t(M_list[[k]]) %*% M_list[[k]]
+			lhs_M <- x[,,k] %*% M_list[[k]] %*% t(R_mat) + t(x[,,k]) %*% M_list[[k]] %*% R_mat
+			rhs_M <- R_mat %*% MtM %*% t(R_mat) + t(R_mat) %*% MtM %*% R_mat + diag(1e-8, R)
+			M_list[[k]] <- lhs_M %*% solve(rhs_M)
+		}
+
+		#extract A and D_k from M_k: A is shared, D_k is per-slice scaling
+		# Compute weighted average of M_k column spaces
+		M_avg <- Reduce("+", M_list) / K
+		qr_avg <- qr(M_avg)
+		A_new <- qr.Q(qr_avg)
+		# D_k: project M_k onto A to get diagonal scaling
+		AtA_inv <- solve(t(A_new) %*% A_new + diag(1e-10, R))
+		for(k in 1:K){
+			# M_k ~ A D_k => D_k = diag of (A^T A)^{-1} A^T M_k
+			proj <- AtA_inv %*% t(A_new) %*% M_list[[k]]
+			D_list[[k]] <- diag(diag(proj), nrow=R, ncol=R)
+			# reconstruct M_k with DEDICOM structure
+			M_list[[k]] <- A_new %*% D_list[[k]]
+		}
+		A <- A_new
+
+		#reconstruct estimate
+		est_arr <- array(0, dim=modes)
+		for(k in 1:K){
+			est_arr[,,k] <- A %*% D_list[[k]] %*% R_mat %*% D_list[[k]] %*% t(A)
+		}
+
+		if(CHECK_CONV(est_arr)){
+			converged <- TRUE
+			setTxtProgressBar(pb,max_iter)
+		}else{
+			curr_iter <- curr_iter + 1
+		}
+	}
+	if(!converged){setTxtProgressBar(pb,max_iter)}
+	close(pb)
+
+	#put together return list
+	est <- as.tensor(est_arr)
+	fnorm_resid <- fnorm_resid[fnorm_resid!=0]
+	norm_percent <- (1-(tail(fnorm_resid,1)/tnsr_norm))*100
+	invisible(list(A=A, R=R_mat, D=D_list, conv=converged, est=est,
+		norm_percent=norm_percent, fnorm_resid=tail(fnorm_resid,1),
+		all_resids=fnorm_resid))
+}
+
+
+#'PARAFAC2 Decomposition
+#'
+#'PARAFAC2 decomposition of a 3-Tensor. Decomposes a 3-Tensor into slice-specific orthogonal matrices \code{H_k}, a shared profile matrix \code{B}, a mode-3 factor matrix \code{C}, and slice-specific diagonal weight matrices \code{D_k} such that each frontal slice \code{X_k = H_k \%*\% B \%*\% D_k \%*\% t(C)}. The key PARAFAC2 constraint is that \code{t(H_k) \%*\% H_k} is constant across all slices. Uses the ALS estimation procedure of Kiers et al. (1999). For more details on PARAFAC2, consult Harshman (1972).
+#'@export
+#'@details A progress bar is included to help monitor operations on large tensors. The input tensor must be 3-dimensional. Unlike \code{\link{cp}}, PARAFAC2 allows different row spaces per slice while constraining their cross-products to be equal.
+#'@name parafac2
+#'@rdname parafac2
+#'@aliases parafac2
+#'@param tnsr 3-Tensor to decompose
+#'@param num_components the number of components for the decomposition
+#'@param max_iter maximum number of iterations if error stays above \code{tol}
+#'@param tol relative Frobenius norm error tolerance
+#'@return a list containing the following:\describe{
+#'\item{\code{H}}{a list of orthogonal matrices (one per frontal slice), each of size \code{mode1} by \code{num_components}}
+#'\item{\code{B}}{the shared profile matrix of size \code{num_components} by \code{num_components}}
+#'\item{\code{C}}{the mode-3 factor matrix of size \code{mode2} by \code{num_components}}
+#'\item{\code{D}}{a list of diagonal weight matrices, one for each frontal slice}
+#'\item{\code{conv}}{whether or not \code{resid} < \code{tol} by the last iteration}
+#'\item{\code{est}}{estimate of \code{tnsr} after decomposition}
+#'\item{\code{norm_percent}}{the percent of Frobenius norm explained by the approximation}
+#'\item{\code{fnorm_resid}}{the Frobenius norm of the error \code{fnorm(est-tnsr)}}
+#'\item{\code{all_resids}}{vector containing the Frobenius norm of error for all the iterations}
+#'}
+#'@seealso \code{\link{cp}}, \code{\link{tucker}}
+#'@references R. Harshman, "PARAFAC2: Mathematical and technical notes". UCLA Working Papers in Phonetics 1972.
+#'@references H. Kiers, J. ten Berge, R. Bro, "PARAFAC2 - Part I. A direct fitting algorithm for the PARAFAC2 model". Journal of Chemometrics 1999.
+#'@note The input tensor must be 3-dimensional.
+#'@examples
+#'tnsr <- rand_tensor(c(6,5,4))
+#'pf2D <- parafac2(tnsr, num_components=2)
+#'pf2D$conv
+#'pf2D$norm_percent
+#'plot(pf2D$all_resids)
+parafac2 <- function(tnsr, num_components=NULL, max_iter=25, tol=1e-5){
+	if(is.null(num_components)) stop("num_components must be specified")
+	stopifnot(is(tnsr,"Tensor"))
+	if(tnsr@num_modes!=3) stop("PARAFAC2 only for 3D tensors")
+	if (.is_zero_tensor(tnsr)) stop("Zero tensor detected")
+
+	modes <- tnsr@modes
+	I <- modes[1]
+	J <- modes[2]
+	K <- modes[3]
+	R <- num_components
+	x <- tnsr@data
+	tnsr_norm <- fnorm(tnsr)
+
+	#initialization
+	C <- qr.Q(qr(matrix(rnorm(J * R), J, R)))
+	H_list <- vector("list", K)
+	D_list <- vector("list", K)
+	B <- diag(R)
+	for(k in 1:K){
+		H_list[[k]] <- qr.Q(qr(matrix(rnorm(I * R), I, R)))
+		D_list[[k]] <- diag(rep(1, R), nrow=R, ncol=R)
+	}
+
+	curr_iter <- 1
+	converged <- FALSE
+	fnorm_resid <- rep(0, max_iter)
+
+	CHECK_CONV <- function(est_arr){
+		curr_resid <- sqrt(sum((est_arr - x)^2))
+		fnorm_resid[curr_iter] <<- curr_resid
+		if (curr_iter==1) return(FALSE)
+		if (abs(curr_resid-fnorm_resid[curr_iter-1])/tnsr_norm < tol) return(TRUE)
+		else{return(FALSE)}
+	}
+
+	#progress bar
+	pb <- txtProgressBar(min=0,max=max_iter,style=3)
+	#main loop (Kiers et al. 1999 ALS)
+	while((curr_iter < max_iter) && (!converged)){
+		setTxtProgressBar(pb,curr_iter)
+
+		#step 1: update H_k via Procrustes rotation
+		# For each k, H_k = U_k V_k^T where SVD(X_k C D_k B^T) = U_k S_k V_k^T
+		for(k in 1:K){
+			target <- x[,,k] %*% C %*% D_list[[k]] %*% t(B)
+			svd_res <- svd(target, nu=I, nv=R)
+			H_list[[k]] <- svd_res$u[,1:R,drop=FALSE] %*% t(svd_res$v[,1:R,drop=FALSE])
+		}
+
+		#step 2: update B and D_k
+		# Define Y_k = H_k^T X_k C, then Y_k ~ B D_k (for each k)
+		# Stack: [Y_1; Y_2;...; Y_K] = [B D_1; B D_2;...; B D_K]
+		# This is a CP-like subproblem: Y_k = B * diag(d_k)
+		Y_list <- vector("list", K)
+		for(k in 1:K){
+			Y_list[[k]] <- t(H_list[[k]]) %*% x[,,k] %*% C
+		}
+
+		# Update B: given D_k, solve B = (sum_k Y_k D_k) (sum_k D_k^2)^{-1}
+		lhs_B <- matrix(0, R, R)
+		rhs_B <- matrix(0, R, R)
+		for(k in 1:K){
+			lhs_B <- lhs_B + Y_list[[k]] %*% D_list[[k]]
+			rhs_B <- rhs_B + D_list[[k]] %*% D_list[[k]]
+		}
+		B <- lhs_B %*% solve(rhs_B + diag(1e-10, R))
+
+		# Update D_k: D_k = diag(diag(B^{-1} Y_k)) approximately
+		# More precisely: d_k = diag(solve(B^T B) B^T Y_k)
+		BtB_inv_Bt <- solve(t(B) %*% B + diag(1e-10, R)) %*% t(B)
+		for(k in 1:K){
+			d_k <- diag(BtB_inv_Bt %*% Y_list[[k]])
+			D_list[[k]] <- diag(d_k, nrow=R, ncol=R)
+		}
+
+		#step 3: update C
+		# min sum_k || X_k - H_k B D_k C^T ||^2 w.r.t. C
+		# => C = (sum_k X_k^T H_k B D_k) (sum_k D_k B^T B D_k)^{-1}
+		lhs_C <- matrix(0, J, R)
+		rhs_C <- matrix(0, R, R)
+		for(k in 1:K){
+			lhs_C <- lhs_C + t(x[,,k]) %*% H_list[[k]] %*% B %*% D_list[[k]]
+			rhs_C <- rhs_C + D_list[[k]] %*% t(B) %*% B %*% D_list[[k]]
+		}
+		C <- lhs_C %*% solve(rhs_C + diag(1e-10, R))
+
+		#reconstruct estimate
+		est_arr <- array(0, dim=modes)
+		for(k in 1:K){
+			est_arr[,,k] <- H_list[[k]] %*% B %*% D_list[[k]] %*% t(C)
+		}
+
+		if(CHECK_CONV(est_arr)){
+			converged <- TRUE
+			setTxtProgressBar(pb,max_iter)
+		}else{
+			curr_iter <- curr_iter + 1
+		}
+	}
+	if(!converged){setTxtProgressBar(pb,max_iter)}
+	close(pb)
+
+	#put together return list
+	est <- as.tensor(est_arr)
+	fnorm_resid <- fnorm_resid[fnorm_resid!=0]
+	norm_percent <- (1-(tail(fnorm_resid,1)/tnsr_norm))*100
+	invisible(list(H=H_list, B=B, C=C, D=D_list, conv=converged, est=est,
+		norm_percent=norm_percent, fnorm_resid=tail(fnorm_resid,1),
+		all_resids=fnorm_resid))
+}
+
+#'Two-Dimensional Linear Discriminant Analysis
+#'
+#'Two-Dimensional Linear Discriminant Analysis (2DLDA) for a 3-Tensor of matrix observations with class labels. Finds left and right projection matrices \code{L} and \code{R} that maximize class separability in the projected space. Each frontal slice is treated as a matrix observation. This is an iterative algorithm. For more details on 2DLDA, consult Ye et al. (2005).
+#'@export
+#'@details A progress bar is included to help monitor operations on large tensors. The input tensor must be 3-dimensional, where the third mode indexes the observations. Unlike other decompositions in this package, 2DLDA is a supervised method that requires class labels.
+#'@name twodlda
+#'@rdname twodlda
+#'@aliases twodlda
+#'@param tnsr 3-Tensor where the third mode indexes observations
+#'@param labels a vector of class labels (length must equal the third mode)
+#'@param r_ranks number of left projection vectors (columns of \code{L})
+#'@param c_ranks number of right projection vectors (columns of \code{R})
+#'@param max_iter maximum number of iterations if error stays above \code{tol}
+#'@param tol relative Frobenius norm error tolerance
+#'@return a list containing the following:\describe{
+#'\item{\code{L}}{the left projection matrix of size \code{mode1} by \code{r_ranks}}
+#'\item{\code{R}}{the right projection matrix of size \code{mode2} by \code{c_ranks}}
+#'\item{\code{Z}}{a list of projected feature matrices (one per observation), each of size \code{r_ranks} by \code{c_ranks}}
+#'\item{\code{conv}}{whether or not \code{resid} < \code{tol} by the last iteration}
+#'\item{\code{est}}{estimate of \code{tnsr} after projection and back-projection}
+#'\item{\code{norm_percent}}{the percent of Frobenius norm explained by the approximation}
+#'\item{\code{fnorm_resid}}{the Frobenius norm of the error \code{fnorm(est-tnsr)}}
+#'\item{\code{all_resids}}{vector containing the Frobenius norm of error for all the iterations}
+#'}
+#'@seealso \code{\link{mpca}}, \code{\link{tucker}}
+#'@references J. Ye, R. Janardan, Q. Li, "Two-Dimensional Linear Discriminant Analysis". Advances in Neural Information Processing Systems 2005.
+#'@note The length of \code{labels} must match the third mode of \code{tnsr}.
+#'@examples
+#'tnsr <- rand_tensor(c(5,4,10))
+#'labels <- rep(c(1,2), each=5)
+#'twodldaD <- twodlda(tnsr, labels=labels, r_ranks=2, c_ranks=2)
+#'twodldaD$conv
+#'twodldaD$norm_percent
+twodlda <- function(tnsr, labels=NULL, r_ranks=NULL, c_ranks=NULL, max_iter=25, tol=1e-5){
+	if(is.null(labels)) stop("labels must be specified")
+	stopifnot(is(tnsr,"Tensor"))
+	if(tnsr@num_modes!=3) stop("2DLDA only for 3D tensors")
+	if (.is_zero_tensor(tnsr)) stop("Zero tensor detected")
+
+	modes <- tnsr@modes
+	I <- modes[1]
+	J <- modes[2]
+	K <- modes[3]
+	if(length(labels)!=K) stop("length of labels must match the third mode")
+	classes <- unique(labels)
+	num_classes <- length(classes)
+	if(num_classes < 2) stop("at least 2 classes are required")
+
+	x <- tnsr@data
+	tnsr_norm <- fnorm(tnsr)
+
+	if(is.null(r_ranks)) r_ranks <- min(I, num_classes)
+	if(is.null(c_ranks)) c_ranks <- min(J, num_classes)
+
+	#compute grand mean
+	grand_mean <- apply(x, 1:2, mean)
+
+	#compute class means
+	class_means <- vector("list", num_classes)
+	class_sizes <- integer(num_classes)
+	for(g in 1:num_classes){
+		idx <- which(labels == classes[g])
+		class_sizes[g] <- length(idx)
+		if(length(idx)==1){
+			class_means[[g]] <- x[,,idx]
+		}else{
+			class_means[[g]] <- apply(x[,,idx,drop=FALSE], 1:2, mean)
+		}
+	}
+
+	#initialize R with random orthonormal columns
+	R_mat <- qr.Q(qr(matrix(rnorm(J * c_ranks), J, c_ranks)))
+
+	curr_iter <- 1
+	converged <- FALSE
+	fnorm_resid <- rep(0, max_iter)
+
+	CHECK_CONV <- function(est_arr){
+		curr_resid <- sqrt(sum((est_arr - x)^2))
+		fnorm_resid[curr_iter] <<- curr_resid
+		if (curr_iter==1) return(FALSE)
+		if (abs(curr_resid-fnorm_resid[curr_iter-1])/tnsr_norm < tol) return(TRUE)
+		else{return(FALSE)}
+	}
+
+	#progress bar
+	pb <- txtProgressBar(min=0,max=max_iter,style=3)
+	L_mat <- NULL
+	#main loop
+	while((curr_iter < max_iter) && (!converged)){
+		setTxtProgressBar(pb,curr_iter)
+
+		#step 1: compute row scatter matrices given R_mat
+		# Project columns: X_k R -> I x c_ranks, then compute scatter in I-space
+		Sb_row <- matrix(0, I, I)
+		Sw_row <- matrix(0, I, I)
+		grand_proj_row <- grand_mean %*% R_mat
+		for(g in 1:num_classes){
+			mean_proj <- class_means[[g]] %*% R_mat
+			diff_row <- mean_proj - grand_proj_row
+			Sb_row <- Sb_row + class_sizes[g] * (diff_row %*% t(diff_row))
+			idx <- which(labels == classes[g])
+			for(i in idx){
+				diff_i <- x[,,i] %*% R_mat - mean_proj
+				Sw_row <- Sw_row + diff_i %*% t(diff_i)
+			}
+		}
+		# Solve generalized eigenvalue problem: Sb_row v = lambda Sw_row v
+		Sw_row_reg <- Sw_row + diag(1e-8, I)
+		eig_row <- eigen(solve(Sw_row_reg) %*% Sb_row)
+		L_mat <- Re(eig_row$vectors[, 1:r_ranks, drop=FALSE])
+
+		#step 2: compute column scatter matrices given L_mat
+		Sb_col <- matrix(0, J, J)
+		Sw_col <- matrix(0, J, J)
+		grand_proj_col <- t(L_mat) %*% grand_mean
+		for(g in 1:num_classes){
+			mean_proj <- t(L_mat) %*% class_means[[g]]
+			diff_col <- mean_proj - grand_proj_col
+			Sb_col <- Sb_col + class_sizes[g] * (t(diff_col) %*% diff_col)
+			idx <- which(labels == classes[g])
+			for(i in idx){
+				diff_i <- t(L_mat) %*% x[,,i] - mean_proj
+				Sw_col <- Sw_col + t(diff_i) %*% diff_i
+			}
+		}
+		Sw_col_reg <- Sw_col + diag(1e-8, J)
+		eig_col <- eigen(solve(Sw_col_reg) %*% Sb_col)
+		R_mat <- Re(eig_col$vectors[, 1:c_ranks, drop=FALSE])
+
+		#reconstruct estimate: est_k = L Z_k R^T where Z_k = L^T X_k R
+		est_arr <- array(0, dim=modes)
+		for(k in 1:K){
+			z_k <- t(L_mat) %*% x[,,k] %*% R_mat
+			est_arr[,,k] <- L_mat %*% z_k %*% t(R_mat)
+		}
+
+		if(CHECK_CONV(est_arr)){
+			converged <- TRUE
+			setTxtProgressBar(pb,max_iter)
+		}else{
+			curr_iter <- curr_iter + 1
+		}
+	}
+	if(!converged){setTxtProgressBar(pb,max_iter)}
+	close(pb)
+
+	#compute projected features
+	Z_list <- vector("list", K)
+	est_arr <- array(0, dim=modes)
+	for(k in 1:K){
+		Z_list[[k]] <- t(L_mat) %*% x[,,k] %*% R_mat
+		est_arr[,,k] <- L_mat %*% Z_list[[k]] %*% t(R_mat)
+	}
+
+	est <- as.tensor(est_arr)
+	fnorm_resid <- fnorm_resid[fnorm_resid!=0]
+	if(length(fnorm_resid)==0) fnorm_resid <- fnorm(est - tnsr)
+	norm_percent <- (1-(tail(fnorm_resid,1)/tnsr_norm))*100
+	invisible(list(L=L_mat, R=R_mat, Z=Z_list, conv=converged, est=est,
+		norm_percent=norm_percent, fnorm_resid=tail(fnorm_resid,1),
+		all_resids=fnorm_resid))
+}
 
 
 ###t-compress (Not Supported)
